@@ -42,6 +42,33 @@
       },
       "risk_score": 0.5,
       "state": "caution"
+    },
+    {
+      "timestamp": "2026-01-12T23:26:15.731860",
+      "location": {
+        "latitude": 22.682314,
+        "longitude": 72.870255
+      },
+      "risk_score": 0.5,
+      "state": "caution"
+    },
+    {
+      "timestamp": "2026-01-12T23:26:15.781164",
+      "location": {
+        "latitude": 22.682314,
+        "longitude": 72.870255
+      },
+      "risk_score": 0.5,
+      "state": "caution"
+    },
+    {
+      "timestamp": "2026-01-12T23:27:58.296391",
+      "location": {
+        "latitude": 22.68141766751205,
+        "longitude": 72.86825169263174
+      },
+      "risk_score": 0.5,
+      "state": "caution"
     }
   ]
 }
