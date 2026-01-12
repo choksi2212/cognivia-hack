@@ -8,6 +8,7 @@ import Header from '@/components/Header'
 import Hero from '@/components/Hero'
 import RiskMonitor from '@/components/RiskMonitor'
 import AgentStatus from '@/components/AgentStatus'
+import RoutePlanner from '@/components/RoutePlanner'
 import Footer from '@/components/Footer'
 
 // Dynamically import map component (client-side only)
@@ -95,7 +96,7 @@ export default function Home() {
               className="py-12 px-4"
             >
               <div className="max-w-7xl mx-auto">
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
                   {/* Map */}
                   <motion.div 
                     className="lg:col-span-2"
@@ -119,6 +120,15 @@ export default function Home() {
                     <RiskMonitor />
                   </motion.div>
                 </div>
+                
+                {/* Route Planner */}
+                <motion.div
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.6, duration: 0.5 }}
+                >
+                  <RoutePlanner />
+                </motion.div>
               </div>
             </motion.section>
           )}

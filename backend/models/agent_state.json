@@ -69,6 +69,15 @@
       },
       "risk_score": 0.5,
       "state": "caution"
+    },
+    {
+      "timestamp": "2026-01-12T23:30:22.857600",
+      "location": {
+        "latitude": 22.680587562809972,
+        "longitude": 72.86775111255092
+      },
+      "risk_score": 0.5,
+      "state": "caution"
     }
   ]
 }
