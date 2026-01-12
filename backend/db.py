@@ -86,7 +86,7 @@ class SystemLog(Base):
     
     id = Column(String, primary_key=True)
     eventType = Column(String, nullable=False)
-    metadata = Column(JSON, nullable=True)
+    event_metadata = Column(JSON, nullable=True)
     timestamp = Column(DateTime, default=datetime.utcnow)
 
 
@@ -251,7 +251,7 @@ def log_system_event(event_type: str, metadata: Optional[Dict] = None) -> bool:
         log = SystemLog(
             id=str(uuid.uuid4()),
             eventType=event_type,
-            metadata=metadata,
+            event_metadata=metadata,
             timestamp=datetime.utcnow()
         )
         db.add(log)

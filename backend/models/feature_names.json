@@ -1,0 +1,43 @@
+{
+  "feature_names": [
+    "total_crimes",
+    "crime_rate",
+    "hour",
+    "day_of_week",
+    "is_night",
+    "is_evening",
+    "is_late_night",
+    "is_weekend",
+    "time_of_day_encoded",
+    "poi_density",
+    "police_station_distance",
+    "hospital_distance",
+    "intersection_count",
+    "dead_end_nearby",
+    "lighting_score",
+    "crowd_density",
+    "isolation_score",
+    "night_isolation",
+    "evening_alley",
+    "night_low_poi",
+    "night_far_police",
+    "road_type_footpath",
+    "road_type_highway",
+    "road_type_main_road",
+    "road_type_residential"
+  ],
+  "classes": [
+    "low"
+  ],
+  "metrics": {
+    "train_accuracy": 1.0,
+    "test_accuracy": 1.0,
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1_score": 1.0,
+    "cv_mean": 1.0,
+    "cv_std": 0.0
+  },
+  "n_features": 25,
+  "model_type": "RandomForestClassifier"
+}
