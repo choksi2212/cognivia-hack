@@ -13,6 +13,7 @@ from datetime import datetime
 from fastapi import FastAPI, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
+from contextlib import asynccontextmanager
 import numpy as np
 import pandas as pd
 
@@ -23,11 +24,62 @@ from config import MODEL_PATH, SCALER_PATH, FEATURE_NAMES_PATH, AGENT_STATE_PATH
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Initialize FastAPI app
+# Global variables for model and agent
+model = None
+scaler = None
+feature_names = []
+agent = None
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Lifespan event handler for startup and shutdown"""
+    global model, scaler, feature_names, agent
+    
+    # Startup
+    try:
+        # Load ML model
+        if MODEL_PATH.exists():
+            model = joblib.load(MODEL_PATH)
+            logger.info(f"Model loaded from {MODEL_PATH}")
+        else:
+            logger.warning("Model not found. Please train the model first.")
+        
+        # Load scaler
+        if SCALER_PATH.exists():
+            scaler = joblib.load(SCALER_PATH)
+            logger.info(f"Scaler loaded from {SCALER_PATH}")
+        
+        # Load feature names
+        if FEATURE_NAMES_PATH.exists():
+            with open(FEATURE_NAMES_PATH, 'r') as f:
+                metadata = json.load(f)
+                feature_names = metadata.get('feature_names', [])
+                logger.info(f"Loaded {len(feature_names)} feature names")
+        
+        # Initialize agent
+        agent = SafetyAgent(state_file=AGENT_STATE_PATH)
+        logger.info("Safety agent initialized")
+        
+        logger.info("="*60)
+        logger.info("SITARA Backend Ready")
+        logger.info("="*60)
+        
+    except Exception as e:
+        logger.error(f"Error loading models: {e}")
+    
+    yield
+    
+    # Shutdown
+    logger.info("Shutting down SITARA backend")
+
+
+# Initialize FastAPI app with lifespan
 app = FastAPI(
     title="SITARA API",
     description="Agentic Situational Risk Intelligence Platform for Women's Safety",
-    version="1.0.0"
+    version="1.0.0",
+    lifespan=lifespan
 )
 
 # CORS middleware
@@ -38,12 +90,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# Global variables for model and agent
-model = None
-scaler = None
-feature_names = []
-agent = None
 
 
 # Pydantic models
@@ -117,48 +163,7 @@ class AgentStateResponse(BaseModel):
     location_history_count: int
 
 
-# Startup and shutdown events
-@app.on_event("startup")
-async def load_models():
-    """Load ML model and initialize agent on startup"""
-    global model, scaler, feature_names, agent
-    
-    try:
-        # Load ML model
-        if MODEL_PATH.exists():
-            model = joblib.load(MODEL_PATH)
-            logger.info(f"Model loaded from {MODEL_PATH}")
-        else:
-            logger.warning("Model not found. Please train the model first.")
-        
-        # Load scaler
-        if SCALER_PATH.exists():
-            scaler = joblib.load(SCALER_PATH)
-            logger.info(f"Scaler loaded from {SCALER_PATH}")
-        
-        # Load feature names
-        if FEATURE_NAMES_PATH.exists():
-            with open(FEATURE_NAMES_PATH, 'r') as f:
-                metadata = json.load(f)
-                feature_names = metadata.get('feature_names', [])
-                logger.info(f"Loaded {len(feature_names)} feature names")
-        
-        # Initialize agent
-        agent = SafetyAgent(state_file=AGENT_STATE_PATH)
-        logger.info("Safety agent initialized")
-        
-        logger.info("="*60)
-        logger.info("SITARA Backend Ready")
-        logger.info("="*60)
-        
-    except Exception as e:
-        logger.error(f"Error loading models: {e}")
-
-
-@app.on_event("shutdown")
-async def shutdown():
-    """Cleanup on shutdown"""
-    logger.info("Shutting down SITARA backend")
+# Startup and shutdown events managed by lifespan handler above
 
 
 # Helper functions
@@ -477,4 +482,4 @@ async def model_info():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
