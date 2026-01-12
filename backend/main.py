@@ -20,6 +20,7 @@ import pandas as pd
 from agent import SafetyAgent, AgentDecision
 from config import MODEL_PATH, SCALER_PATH, FEATURE_NAMES_PATH, AGENT_STATE_PATH
 from osm_feature_extractor import extract_real_features
+import db
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -61,6 +62,15 @@ async def lifespan(app: FastAPI):
         # Initialize agent
         agent = SafetyAgent(state_file=AGENT_STATE_PATH)
         logger.info("Safety agent initialized")
+        
+        # Initialize database
+        db_initialized = db.init_db()
+        if db_initialized:
+            logger.info("Database initialized successfully")
+            stats = db.get_statistics()
+            logger.info(f"Database stats: {stats}")
+        else:
+            logger.warning("Database initialization failed - will run without persistence")
         
         logger.info("="*60)
         logger.info("SITARA Backend Ready")
@@ -359,12 +369,27 @@ async def root():
 @app.get("/health")
 async def health_check():
     """Health check endpoint"""
+    db_stats = db.get_statistics()
     return {
         "status": "healthy",
         "model_loaded": model is not None,
         "agent_initialized": agent is not None,
+        "database_connected": db_stats.get('connected', False),
         "timestamp": datetime.now().isoformat()
     }
+
+
+@app.get("/api/database/stats")
+async def get_database_stats():
+    """Get database statistics"""
+    return db.get_statistics()
+
+
+@app.get("/api/locations/recent")
+async def get_recent_locations(user_id: str = "anonymous", limit: int = 10):
+    """Get recent location assessments"""
+    locations = db.get_recent_locations(user_id=user_id, limit=limit)
+    return {"locations": locations, "count": len(locations)}
 
 
 @app.post("/api/assess-risk", response_model=RiskAssessmentResponse)
@@ -388,6 +413,28 @@ async def assess_risk(request: RiskAssessmentRequest):
         }
         
         decision = agent.process_risk_update(risk_score, location=location_data)
+        
+        # Log to database
+        db.log_location(
+            lat=request.location.latitude,
+            lng=request.location.longitude,
+            risk_score=risk_score,
+            risk_level=risk_level,
+            agent_state=agent.state,
+            features=features
+        )
+        
+        # Log alert if necessary
+        if decision.action != "monitor":
+            db.log_alert(
+                user_id="anonymous",
+                alert_type=decision.action,
+                priority=decision.priority,
+                message=decision.message,
+                risk_score=risk_score,
+                lat=request.location.latitude,
+                lng=request.location.longitude
+            )
         
         response = RiskAssessmentResponse(
             risk_score=risk_score,
@@ -463,6 +510,18 @@ async def analyze_route(request: RouteRequest):
             route_risk_level = 'medium'
         else:
             route_risk_level = 'high'
+        
+        # Log route to database
+        waypoint_data = [{'lat': w.latitude, 'lng': w.longitude} for w in waypoints]
+        db.log_route(
+            start_lat=request.start.latitude,
+            start_lng=request.start.longitude,
+            end_lat=request.end.latitude,
+            end_lng=request.end.longitude,
+            risk_score=route_risk_score,
+            risk_level=route_risk_level,
+            waypoints=waypoint_data
+        )
         
         response = RouteResponse(
             route_risk_score=route_risk_score,
