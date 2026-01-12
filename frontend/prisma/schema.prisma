@@ -110,10 +110,10 @@ model Route {
 
 // System logs for analytics
 model SystemLog {
-  id          String   @id @default(uuid())
-  eventType   String   // risk_assessment, route_analysis, alert_triggered
-  metadata    Json?
-  timestamp   DateTime @default(now())
+  id             String   @id @default(uuid())
+  eventType      String   // risk_assessment, route_analysis, alert_triggered
+  event_metadata Json?
+  timestamp      DateTime @default(now())
   
   @@index([eventType, timestamp])
   @@map("system_logs")
