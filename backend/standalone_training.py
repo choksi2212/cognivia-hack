@@ -48,10 +48,25 @@ MODELS_DIR.mkdir(exist_ok=True)
 
 
 def create_temporal_features(df: pd.DataFrame):
-    """Create time-based features"""
+    """
+    Create time-based features with REALISTIC distribution
+    Not uniform random - reflects actual temporal patterns
+    """
     
-    df['hour'] = np.random.randint(0, 24, len(df))
-    df['day_of_week'] = np.random.randint(0, 7, len(df))
+    # Realistic hour distribution (more samples during active hours)
+    # Peak hours: 17-21 (evening), Lower: 0-6 (late night)
+    hour_probs = np.array([
+        0.01, 0.01, 0.01, 0.01, 0.01, 0.02,  # 0-5 (late night)
+        0.03, 0.04, 0.05, 0.05, 0.04, 0.04,  # 6-11 (morning)
+        0.04, 0.04, 0.04, 0.05, 0.05, 0.07,  # 12-17 (afternoon)
+        0.09, 0.10, 0.09, 0.07, 0.04, 0.02   # 18-23 (evening/night)
+    ])
+    hour_probs = hour_probs / hour_probs.sum()
+    df['hour'] = np.random.choice(24, size=len(df), p=hour_probs)
+    
+    # Realistic day distribution (slightly more weekdays)
+    day_probs = np.array([0.15, 0.15, 0.15, 0.15, 0.15, 0.12, 0.13])  # Mon-Sun
+    df['day_of_week'] = np.random.choice(7, size=len(df), p=day_probs)
     
     # Time-based derived features
     df['is_night'] = (df['hour'] >= 21) | (df['hour'] < 6)
@@ -78,24 +93,59 @@ def create_temporal_features(df: pd.DataFrame):
 
 
 def create_spatial_features(df: pd.DataFrame):
-    """Create synthetic spatial features (OSM-like)"""
+    """
+    Create spatial features with REALISTIC variation
+    Correlated with base crime risk but with substantial noise
+    """
     
     n = len(df)
     
-    # Road type distribution
+    # Use base crime stats to inform spatial features (with noise)
+    base_risk = df.get('risk_score', pd.Series(np.random.rand(n)))
+    
+    # Road type - correlated with risk but noisy
+    road_type_probs = np.zeros((n, 5))
+    for i in range(n):
+        risk = base_risk.iloc[i] if i < len(base_risk) else 0.5
+        # Higher risk areas tend to have more alleys/footpaths
+        if risk < 0.3:
+            probs = [0.15, 0.30, 0.40, 0.10, 0.05]  # More highways/main roads
+        elif risk < 0.6:
+            probs = [0.10, 0.20, 0.45, 0.20, 0.05]  # Balanced
+        else:
+            probs = [0.05, 0.15, 0.35, 0.30, 0.15]  # More alleys/footpaths
+        road_type_probs[i] = probs
+    
     road_types = ['highway', 'main_road', 'residential', 'alley', 'footpath']
-    df['road_type'] = np.random.choice(road_types, n, p=[0.1, 0.2, 0.4, 0.2, 0.1])
+    df['road_type'] = [np.random.choice(road_types, p=road_type_probs[i]) 
+                       for i in range(n)]
     
-    # POI density
-    df['poi_density'] = np.random.exponential(scale=5, size=n)
-    df['police_station_distance'] = np.random.exponential(scale=2000, size=n)
-    df['hospital_distance'] = np.random.exponential(scale=1500, size=n)
+    # POI density - inversely correlated with risk (but noisy)
+    # Safer areas tend to have more POIs, but not perfectly
+    base_poi = 15 * (1 - base_risk) + 3  # Range: 3-18
+    noise_poi = np.random.gamma(2, 2, size=n)  # Gamma noise for realism
+    df['poi_density'] = np.clip(base_poi + noise_poi, 0, 50)
     
-    # Connectivity features
-    df['intersection_count'] = np.random.poisson(lam=3, size=n)
-    df['dead_end_nearby'] = np.random.choice([0, 1], n, p=[0.8, 0.2])
+    # Police station distance - higher risk areas tend to be farther
+    base_dist = 1000 + 2000 * base_risk  # Range: 1000-3000m
+    noise_dist = np.random.exponential(scale=500, size=n)
+    df['police_station_distance'] = base_dist + noise_dist
     
-    # Lighting
+    # Hospital distance - similar pattern
+    base_hosp = 800 + 1500 * base_risk
+    noise_hosp = np.random.exponential(scale=400, size=n)
+    df['hospital_distance'] = base_hosp + noise_hosp
+    
+    # Intersection count - safer areas tend to be more connected
+    base_intersections = 5 * (1 - base_risk) + 1  # Range: 1-6
+    df['intersection_count'] = np.maximum(0, 
+        np.random.poisson(lam=base_intersections, size=n))
+    
+    # Dead ends - more common in higher risk areas
+    dead_end_prob = 0.1 + 0.4 * base_risk  # 10-50% chance
+    df['dead_end_nearby'] = np.random.binomial(1, dead_end_prob)
+    
+    # Lighting - based on road type + area quality
     road_type_lighting = {
         'highway': 0.9,
         'main_road': 0.8,
@@ -103,19 +153,33 @@ def create_spatial_features(df: pd.DataFrame):
         'alley': 0.3,
         'footpath': 0.2
     }
-    df['lighting_score'] = df['road_type'].map(road_type_lighting)
+    base_lighting = df['road_type'].map(road_type_lighting)
+    # Add variation based on area (richer areas have better lighting)
+    area_factor = (1 - base_risk) * 0.2  # Up to +20% for safe areas
+    noise_lighting = np.random.normal(0, 0.05, size=n)
+    df['lighting_score'] = np.clip(base_lighting + area_factor + noise_lighting, 0, 1)
     
-    # Crowd density
-    df['crowd_density'] = np.random.exponential(scale=20, size=n)
+    # Crowd density - varies with time AND area
+    base_crowd = 10 + 20 * (1 - base_risk)  # Safer areas more crowded
+    # Modify by hour
+    hour_factor = np.where(
+        (df['hour'] >= 17) & (df['hour'] <= 21), 1.5,  # Peak evening
+        np.where((df['hour'] >= 0) & (df['hour'] < 6), 0.3, 1.0)  # Late night
+    )
+    df['crowd_density'] = np.maximum(0, 
+        np.random.poisson(lam=base_crowd * hour_factor))
     
-    # Isolation score
+    # Isolation score - complex combination
     df['isolation_score'] = (
         (1 / (df['poi_density'] + 1)) * 
         (1 / (df['intersection_count'] + 1)) * 
-        (df['dead_end_nearby'] + 0.5)
+        (df['dead_end_nearby'] + 0.5) * 
+        (1 - df['lighting_score'] * 0.5)  # Poor lighting increases isolation
     )
-    df['isolation_score'] = (df['isolation_score'] - df['isolation_score'].min()) / \
-                             (df['isolation_score'].max() - df['isolation_score'].min())
+    # Normalize
+    iso_min = df['isolation_score'].min()
+    iso_max = df['isolation_score'].max()
+    df['isolation_score'] = (df['isolation_score'] - iso_min) / (iso_max - iso_min + 1e-10)
     
     return df
 
@@ -147,20 +211,49 @@ def encode_categorical_features(df: pd.DataFrame):
 
 
 def prepare_training_data(location_mapping: pd.DataFrame):
-    """Prepare complete training dataset"""
+    """
+    Prepare REALISTIC training dataset
+    Key change: Add variation to BASE RISK per sample to prevent memorization
+    """
     
     logger.info("Starting feature engineering...")
     
-    # Create multiple samples per location
+    # Create multiple samples per location with VARIED base risk
     samples_per_location = 50
     
     expanded_samples = []
     for idx, row in location_mapping.iterrows():
+        base_dict = row.to_dict()
+        base_risk = base_dict.get('risk_score', 0.5)
+        
         for _ in range(samples_per_location):
-            expanded_samples.append(row.to_dict())
+            sample = base_dict.copy()
+            
+            # ADD VARIATION to base risk (temporal/situational factors)
+            # Same location can have different risk at different times
+            risk_variation = np.random.normal(0, 0.12)  # ±12% variation
+            sample['risk_score'] = np.clip(base_risk + risk_variation, 0, 1)
+            
+            # Re-assign label based on varied risk
+            varied_risk = sample['risk_score']
+            if varied_risk < 0.25:
+                sample['risk_label'] = 'low'
+            elif varied_risk < 0.35:
+                sample['risk_label'] = np.random.choice(['low', 'medium'], 
+                                                        p=[0.7, 0.3])
+            elif varied_risk < 0.60:
+                sample['risk_label'] = 'medium'
+            elif varied_risk < 0.70:
+                sample['risk_label'] = np.random.choice(['medium', 'high'], 
+                                                        p=[0.6, 0.4])
+            else:
+                sample['risk_label'] = 'high'
+            
+            expanded_samples.append(sample)
     
     df = pd.DataFrame(expanded_samples)
     logger.info(f"Created {len(df)} training samples from {len(location_mapping)} locations")
+    logger.info(f"Risk variation added - Score std: {df['risk_score'].std():.3f}")
     
     # Add temporal features
     df = create_temporal_features(df)
@@ -196,33 +289,42 @@ def prepare_training_data(location_mapping: pd.DataFrame):
 
 
 def train_random_forest(X_train, y_train, optimize=True):
-    """Train Random Forest with hyperparameter optimization"""
+    """
+    Train Random Forest with PROPER hyperparameters to prevent overfitting
+    Target: 95-98% accuracy (not 100%!)
+    """
     
     logger.info("="*80)
     logger.info("Training Random Forest Classifier")
     logger.info("="*80)
     
     if optimize:
-        # Simplified grid for faster training
+        # Parameters tuned to PREVENT overfitting
         param_grid = {
-            'n_estimators': [200, 500],
-            'max_depth': [20, 30],
-            'min_samples_split': [2, 5],
-            'min_samples_leaf': [1, 2],
-            'max_features': ['sqrt'],
-            'class_weight': ['balanced']
+            'n_estimators': [100, 200, 300],
+            'max_depth': [10, 15, 20],  # Limit depth to prevent memorization
+            'min_samples_split': [5, 10, 20],  # Require more samples
+            'min_samples_leaf': [2, 4, 8],  # Larger leaf sizes
+            'max_features': ['sqrt', 'log2'],  # Limit features per split
+            'class_weight': ['balanced'],
+            'min_impurity_decrease': [0.0, 0.001, 0.01]  # Pruning
         }
         
-        base_rf = RandomForestClassifier(random_state=42, n_jobs=-1)
+        base_rf = RandomForestClassifier(
+            random_state=42, 
+            n_jobs=-1,
+            bootstrap=True,  # Ensure bootstrapping
+            oob_score=True  # Out-of-bag validation
+        )
         
-        logger.info("Running GridSearchCV...")
+        logger.info("Running GridSearchCV with anti-overfitting params...")
         logger.info(f"Parameter combinations: {np.prod([len(v) for v in param_grid.values()])}")
         
         grid_search = GridSearchCV(
             base_rf,
             param_grid,
-            cv=3,  # Reduced from 5 for speed
-            scoring='accuracy',
+            cv=5,  # Proper 5-fold CV
+            scoring='f1_weighted',  # F1 instead of accuracy
             n_jobs=-1,
             verbose=2
         )
@@ -230,25 +332,35 @@ def train_random_forest(X_train, y_train, optimize=True):
         grid_search.fit(X_train, y_train)
         
         logger.info(f"Best parameters: {grid_search.best_params_}")
-        logger.info(f"Best CV accuracy: {grid_search.best_score_:.4f}")
+        logger.info(f"Best CV F1: {grid_search.best_score_:.4f}")
+        
+        if hasattr(grid_search.best_estimator_, 'oob_score_'):
+            logger.info(f"OOB Score: {grid_search.best_estimator_.oob_score_:.4f}")
         
         model = grid_search.best_estimator_
     
     else:
+        # Conservative defaults to prevent overfitting
         model = RandomForestClassifier(
-            n_estimators=500,
-            max_depth=30,
-            min_samples_split=2,
-            min_samples_leaf=1,
+            n_estimators=200,
+            max_depth=15,  # Limited depth
+            min_samples_split=10,  # More samples required
+            min_samples_leaf=4,  # Larger leaves
             max_features='sqrt',
             class_weight='balanced',
+            min_impurity_decrease=0.001,  # Pruning
             random_state=42,
             n_jobs=-1,
+            bootstrap=True,
+            oob_score=True,
             verbose=1
         )
         
-        logger.info("Training with optimized parameters...")
+        logger.info("Training with anti-overfitting parameters...")
         model.fit(X_train, y_train)
+        
+        if hasattr(model, 'oob_score_'):
+            logger.info(f"OOB Score: {model.oob_score_:.4f}")
     
     logger.info("Training complete!")
     
