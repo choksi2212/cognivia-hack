@@ -1,0 +1,120 @@
+// Prisma schema for SITARA
+// Database: PostgreSQL
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User model for authentication and tracking
+model User {
+  id            String   @id @default(uuid())
+  email         String   @unique
+  name          String?
+  phoneNumber   String?  @unique
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  // Relations
+  locations     Location[]
+  alerts        Alert[]
+  trustedContacts TrustedContact[]
+  
+  @@map("users")
+}
+
+// Location tracking
+model Location {
+  id          String   @id @default(uuid())
+  userId      String
+  latitude    Float
+  longitude   Float
+  timestamp   DateTime @default(now())
+  riskScore   Float?
+  riskLevel   String?  // low, medium, high
+  agentState  String?  // safe, caution, elevated_risk, high_risk
+  
+  // Context
+  hour        Int?
+  dayOfWeek   Int?
+  roadType    String?
+  poiDensity  Float?
+  
+  // Relations
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId, timestamp])
+  @@index([riskLevel])
+  @@map("locations")
+}
+
+// Alerts and notifications
+model Alert {
+  id          String   @id @default(uuid())
+  userId      String
+  type        String   // monitor, suggest_route, silent_checkin, recommend_escalation
+  priority    Int      // 0-3
+  message     String
+  riskScore   Float
+  latitude    Float?
+  longitude   Float?
+  timestamp   DateTime @default(now())
+  acknowledged Boolean @default(false)
+  
+  // Relations
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId, timestamp])
+  @@index([acknowledged])
+  @@map("alerts")
+}
+
+// Trusted contacts for emergency
+model TrustedContact {
+  id          String   @id @default(uuid())
+  userId      String
+  name        String
+  phoneNumber String
+  email       String?
+  relationship String? // friend, family, colleague
+  priority    Int      @default(1) // 1=primary, 2=secondary, etc.
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  
+  // Relations
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@map("trusted_contacts")
+}
+
+// Route history
+model Route {
+  id          String   @id @default(uuid())
+  startLat    Float
+  startLng    Float
+  endLat      Float
+  endLng      Float
+  waypoints   Json?    // Array of waypoints
+  riskScore   Float
+  riskLevel   String
+  timestamp   DateTime @default(now())
+  
+  @@index([timestamp])
+  @@map("routes")
+}
+
+// System logs for analytics
+model SystemLog {
+  id          String   @id @default(uuid())
+  eventType   String   // risk_assessment, route_analysis, alert_triggered
+  metadata    Json?
+  timestamp   DateTime @default(now())
+  
+  @@index([eventType, timestamp])
+  @@map("system_logs")
+}
