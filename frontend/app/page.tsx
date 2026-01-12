@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { motion } from 'framer-motion'
 import dynamic from 'next/dynamic'
 import { healthCheck } from '@/lib/api'
 import Header from '@/components/Header'
@@ -13,8 +14,8 @@ import Footer from '@/components/Footer'
 const Map = dynamic(() => import('@/components/Map'), { 
   ssr: false,
   loading: () => (
-    <div className="w-full h-[600px] bg-gray-100 animate-pulse flex items-center justify-center">
-      <div className="text-gray-500">Loading map...</div>
+    <div className="w-full h-[600px] bg-gradient-to-br from-slate-100 to-slate-200 animate-pulse flex items-center justify-center rounded-xl">
+      <div className="text-slate-500 text-lg font-medium">Loading interactive map...</div>
     </div>
   )
 })
@@ -35,118 +36,261 @@ export default function Home() {
   }, [])
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <Header isBackendOnline={isBackendOnline} />
-      
-      <main className="flex-1">
-        {/* Hero Section */}
-        <Hero onExplore={() => setShowMap(true)} />
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-slate-50 via-blue-50/30 to-purple-50/30 relative overflow-hidden">
+      {/* Animated background elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <motion.div
+          className="absolute -top-40 -right-40 w-80 h-80 bg-blue-400/10 rounded-full blur-3xl"
+          animate={{
+            scale: [1, 1.2, 1],
+            opacity: [0.3, 0.5, 0.3],
+          }}
+          transition={{
+            duration: 8,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+        />
+        <motion.div
+          className="absolute top-1/3 -left-40 w-96 h-96 bg-purple-400/10 rounded-full blur-3xl"
+          animate={{
+            scale: [1.2, 1, 1.2],
+            opacity: [0.4, 0.6, 0.4],
+          }}
+          transition={{
+            duration: 10,
+            repeat: Infinity,
+            ease: "easeInOut",
+            delay: 1
+          }}
+        />
+        <motion.div
+          className="absolute bottom-20 right-1/4 w-72 h-72 bg-indigo-400/10 rounded-full blur-3xl"
+          animate={{
+            scale: [1, 1.3, 1],
+            opacity: [0.3, 0.5, 0.3],
+          }}
+          transition={{
+            duration: 12,
+            repeat: Infinity,
+            ease: "easeInOut",
+            delay: 2
+          }}
+        />
+      </div>
+
+      <div className="relative z-10">
+        <Header isBackendOnline={isBackendOnline} />
         
-        {/* Map and Risk Monitor Section */}
-        {showMap && (
-          <section className="py-12 px-4 bg-gray-50">
+        <main className="flex-1">
+          {/* Hero Section */}
+          <Hero onExplore={() => setShowMap(true)} />
+        
+          {/* Map and Risk Monitor Section */}
+          {showMap && (
+            <motion.section
+              initial={{ opacity: 0, y: 40 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+              className="py-12 px-4"
+            >
+              <div className="max-w-7xl mx-auto">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                  {/* Map */}
+                  <motion.div 
+                    className="lg:col-span-2"
+                    initial={{ opacity: 0, x: -30 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.2, duration: 0.5 }}
+                  >
+                    <div className="glass-card rounded-2xl overflow-hidden shadow-2xl">
+                      <Map />
+                    </div>
+                  </motion.div>
+                  
+                  {/* Sidebar */}
+                  <motion.div 
+                    className="space-y-6"
+                    initial={{ opacity: 0, x: 30 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.4, duration: 0.5 }}
+                  >
+                    <AgentStatus />
+                    <RiskMonitor />
+                  </motion.div>
+                </div>
+              </div>
+            </motion.section>
+          )}
+        
+          {/* Features Section */}
+          <motion.section
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="py-20 px-4"
+          >
             <div className="max-w-7xl mx-auto">
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Map */}
-                <div className="lg:col-span-2">
-                  <div className="glass-card rounded-xl overflow-hidden">
-                    <Map />
-                  </div>
-                </div>
-                
-                {/* Sidebar */}
-                <div className="space-y-6">
-                  <AgentStatus />
-                  <RiskMonitor />
-                </div>
-              </div>
-            </div>
-          </section>
-        )}
-        
-        {/* Features Section */}
-        <section className="py-20 px-4">
-          <div className="max-w-7xl mx-auto">
-            <div className="text-center mb-16">
-              <h2 className="text-4xl font-bold text-dark-900 mb-4">
-                How SITARA Works
-              </h2>
-              <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-                An agentic system that provides preventive risk awareness, not reactive panic responses
-              </p>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-              <FeatureCard
-                icon="🔍"
-                title="Continuous Observation"
-                description="Monitors environmental and temporal context in real-time"
-              />
-              <FeatureCard
-                icon="🧠"
-                title="Intelligent Reasoning"
-                description="Uses ML and agentic AI to assess risk levels continuously"
-              />
-              <FeatureCard
-                icon="🛡️"
-                title="Proportional Intervention"
-                description="Acts only when necessary, with user-controlled escalation"
-              />
-              <FeatureCard
-                icon="🗺️"
-                title="Route Intelligence"
-                description="Suggests safer paths before risk escalates"
-              />
-            </div>
-          </div>
-        </section>
-        
-        {/* India-First Section */}
-        <section className="py-20 px-4 bg-primary-50">
-          <div className="max-w-7xl mx-auto">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-              <div>
-                <h2 className="text-4xl font-bold text-dark-900 mb-6">
-                  Designed for India
+              <motion.div
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5 }}
+                className="text-center mb-16"
+              >
+                <h2 className="text-4xl md:text-5xl font-bold text-dark-900 mb-4">
+                  How SITARA Works
                 </h2>
-                <p className="text-lg text-gray-700 mb-6">
-                  SITARA is explicitly designed for Indian urban environments, not adapted from Western assumptions.
+                <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+                  An agentic system that provides preventive risk awareness, not reactive panic responses
                 </p>
-                <ul className="space-y-4">
-                  <ListItem text="Dense but poorly lit localities" />
-                  <ListItem text="Narrow gullies and dead-end streets" />
-                  <ListItem text="Informal settlements and construction zones" />
-                  <ListItem text="Transit hubs with rapid crowd drop-offs" />
-                  <ListItem text="Cultural preference for discreet assistance" />
-                </ul>
-              </div>
-              <div className="glass-card rounded-xl p-8 bg-white">
-                <h3 className="text-2xl font-bold text-dark-900 mb-4">Privacy First</h3>
-                <div className="space-y-3">
-                  <PrivacyItem text="No camera usage" />
-                  <PrivacyItem text="No microphone usage" />
-                  <PrivacyItem text="No face recognition" />
-                  <PrivacyItem text="No offender profiling" />
-                  <PrivacyItem text="User owns their data" />
-                </div>
+              </motion.div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                <FeatureCard
+                  icon={<SearchIcon />}
+                  title="Continuous Observation"
+                  description="Monitors environmental and temporal context in real-time"
+                  delay={0}
+                />
+                <FeatureCard
+                  icon={<BrainIcon />}
+                  title="Intelligent Reasoning"
+                  description="Uses ML and agentic AI to assess risk levels continuously"
+                  delay={0.1}
+                />
+                <FeatureCard
+                  icon={<ShieldIcon />}
+                  title="Proportional Intervention"
+                  description="Acts only when necessary, with user-controlled escalation"
+                  delay={0.2}
+                />
+                <FeatureCard
+                  icon={<MapIcon />}
+                  title="Route Intelligence"
+                  description="Suggests safer paths before risk escalates"
+                  delay={0.3}
+                />
               </div>
             </div>
-          </div>
-        </section>
-      </main>
-      
-      <Footer />
+          </motion.section>
+        
+          {/* India-First Section */}
+          <motion.section
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="py-20 px-4 bg-gradient-to-br from-blue-50/50 to-purple-50/50"
+          >
+            <div className="max-w-7xl mx-auto">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                <motion.div
+                  initial={{ opacity: 0, x: -30 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: 0.2, duration: 0.5 }}
+                >
+                  <h2 className="text-4xl md:text-5xl font-bold text-dark-900 mb-6">
+                    Designed for India
+                  </h2>
+                  <p className="text-lg text-gray-700 mb-6">
+                    SITARA is explicitly designed for Indian urban environments, not adapted from Western assumptions.
+                  </p>
+                  <ul className="space-y-4">
+                    <ListItem text="Dense but poorly lit localities" />
+                    <ListItem text="Narrow gullies and dead-end streets" />
+                    <ListItem text="Informal settlements and construction zones" />
+                    <ListItem text="Transit hubs with rapid crowd drop-offs" />
+                    <ListItem text="Cultural preference for discreet assistance" />
+                  </ul>
+                </motion.div>
+                <motion.div
+                  initial={{ opacity: 0, x: 30 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: 0.4, duration: 0.5 }}
+                  className="glass-card rounded-2xl p-8 bg-white/80 backdrop-blur-sm shadow-2xl"
+                >
+                  <h3 className="text-2xl font-bold text-dark-900 mb-6">Privacy First</h3>
+                  <div className="space-y-3">
+                    <PrivacyItem text="No camera usage" />
+                    <PrivacyItem text="No microphone usage" />
+                    <PrivacyItem text="No face recognition" />
+                    <PrivacyItem text="No offender profiling" />
+                    <PrivacyItem text="User owns their data" />
+                  </div>
+                </motion.div>
+              </div>
+            </div>
+          </motion.section>
+        </main>
+        
+        <Footer />
+      </div>
     </div>
   )
 }
 
-function FeatureCard({ icon, title, description }: { icon: string; title: string; description: string }) {
+function FeatureCard({ icon, title, description, delay }: { 
+  icon: React.ReactNode; 
+  title: string; 
+  description: string;
+  delay: number;
+}) {
   return (
-    <div className="glass-card rounded-xl p-6 hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-      <div className="text-4xl mb-4">{icon}</div>
+    <motion.div
+      initial={{ opacity: 0, y: 30 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      transition={{ duration: 0.5, delay }}
+      whileHover={{ y: -8, scale: 1.02 }}
+      className="group glass-card rounded-2xl p-6 hover:shadow-2xl transition-all duration-300 bg-white/80 backdrop-blur-sm"
+    >
+      <motion.div 
+        className="w-14 h-14 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl mb-4 flex items-center justify-center text-white shadow-lg group-hover:shadow-xl transition-shadow"
+        whileHover={{ rotate: 5, scale: 1.1 }}
+        transition={{ duration: 0.2 }}
+      >
+        {icon}
+      </motion.div>
       <h3 className="text-xl font-bold text-dark-900 mb-2">{title}</h3>
-      <p className="text-gray-600">{description}</p>
-    </div>
+      <p className="text-gray-600 leading-relaxed">{description}</p>
+    </motion.div>
+  )
+}
+
+// Icon Components
+function SearchIcon() {
+  return (
+    <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+    </svg>
+  )
+}
+
+function BrainIcon() {
+  return (
+    <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+    </svg>
+  )
+}
+
+function ShieldIcon() {
+  return (
+    <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+    </svg>
+  )
+}
+
+function MapIcon() {
+  return (
+    <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+    </svg>
   )
 }
 

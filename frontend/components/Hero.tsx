@@ -1,6 +1,7 @@
 'use client'
 
 import { motion } from 'framer-motion'
+import Link from 'next/link'
 
 interface HeroProps {
   onExplore: () => void
@@ -10,26 +11,26 @@ export default function Hero({ onExplore }: HeroProps) {
   return (
     <section className="relative py-20 px-4 overflow-hidden">
       {/* Background gradient */}
-      <div className="absolute inset-0 bg-gradient-to-br from-primary-50 via-white to-secondary-50 opacity-50"></div>
+      <div className="absolute inset-0 bg-gradient-to-br from-blue-100/30 via-transparent to-purple-100/30 opacity-70"></div>
       
       <div className="relative max-w-7xl mx-auto">
         <div className="text-center">
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
+            transition={{ duration: 0.8, ease: "easeOut" }}
           >
-            <h1 className="text-5xl md:text-7xl font-bold text-dark-900 mb-6">
+            <h1 className="text-5xl md:text-7xl font-bold text-dark-900 mb-6 leading-tight">
               Safety Through
               <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-600 to-secondary-600">
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600">
                 Situational Intelligence
               </span>
             </h1>
           </motion.div>
           
           <motion.p
-            className="text-xl md:text-2xl text-gray-600 mb-12 max-w-3xl mx-auto"
+            className="text-xl md:text-2xl text-gray-600 mb-12 max-w-3xl mx-auto leading-relaxed"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
@@ -44,15 +45,23 @@ export default function Hero({ onExplore }: HeroProps) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.4 }}
           >
-            <button
+            <motion.button
               onClick={onExplore}
-              className="btn-primary text-lg px-8 py-4"
+              className="btn-primary text-lg px-8 py-4 shadow-lg hover:shadow-xl"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
             >
               Explore Live Demo
-            </button>
-            <button className="btn-secondary text-lg px-8 py-4">
-              Learn More
-            </button>
+            </motion.button>
+            <Link href="/about">
+              <motion.button 
+                className="btn-secondary text-lg px-8 py-4"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                Learn More
+              </motion.button>
+            </Link>
           </motion.div>
           
           <motion.div
@@ -61,9 +70,9 @@ export default function Hero({ onExplore }: HeroProps) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.6 }}
           >
-            <StatCard number=">98%" label="ML Model Accuracy" />
-            <StatCard number="Real-time" label="Risk Assessment" />
-            <StatCard number="India-First" label="Design Philosophy" />
+            <StatCard number=">98%" label="ML Model Accuracy" delay={0.7} />
+            <StatCard number="Real-time" label="Risk Assessment" delay={0.8} />
+            <StatCard number="India-First" label="Design Philosophy" delay={0.9} />
           </motion.div>
         </div>
       </div>
@@ -71,11 +80,17 @@ export default function Hero({ onExplore }: HeroProps) {
   )
 }
 
-function StatCard({ number, label }: { number: string; label: string }) {
+function StatCard({ number, label, delay }: { number: string; label: string; delay: number }) {
   return (
-    <div className="glass-card rounded-xl p-6">
-      <div className="text-3xl font-bold text-primary-600 mb-2">{number}</div>
+    <motion.div
+      initial={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.4, delay }}
+      whileHover={{ y: -5, transition: { duration: 0.2 } }}
+      className="glass-card rounded-2xl p-6 bg-white/80 backdrop-blur-sm shadow-lg hover:shadow-xl transition-shadow"
+    >
+      <div className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">{number}</div>
       <div className="text-gray-600">{label}</div>
-    </div>
+    </motion.div>
   )
 }
