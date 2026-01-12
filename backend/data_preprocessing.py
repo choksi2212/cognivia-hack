@@ -47,7 +47,10 @@ class DataPreprocessor:
     
     def clean_column_names(self, df: pd.DataFrame) -> pd.DataFrame:
         """Standardize column names"""
-        df.columns = df.columns.str.strip().str.lower().str.replace(' ', '_').str.replace('[^a-z0-9_]', '', regex=True)
+        df.columns = (df.columns.str.strip().str.lower()
+                      .str.replace(' ', '_')
+                      .str.replace('/', '_')
+                      .str.replace('[^a-z0-9_]', '', regex=True))
         return df
     
     def extract_district_level_data(self, datasets: Dict[str, pd.DataFrame]) -> pd.DataFrame:
@@ -79,7 +82,10 @@ class DataPreprocessor:
                     df['year'] = pd.to_numeric(df['year'], errors='coerce')
                 
                 # Identify key columns
-                if 'state_ut' in df.columns and 'district' in df.columns:
+                has_state = any(col in df.columns for col in ['state_ut', 'state'])
+                has_district = 'district' in df.columns
+                
+                if has_state and has_district:
                     district_dfs.append(df)
                     logger.info(f"Added district data from {key}")
         
