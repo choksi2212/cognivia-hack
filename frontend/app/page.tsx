@@ -27,13 +27,32 @@ export default function Home() {
 
   useEffect(() => {
     // Check backend health
-    healthCheck()
-      .then((data) => {
-        setIsBackendOnline(data.status === 'healthy')
-      })
-      .catch(() => {
+    const checkHealth = async () => {
+      try {
+        const response = await fetch('http://localhost:8000/health', {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' }
+        })
+        
+        if (response.ok) {
+          const data = await response.json()
+          setIsBackendOnline(data.status === 'healthy')
+        } else {
+          setIsBackendOnline(false)
+        }
+      } catch (error) {
+        console.error('Health check failed:', error)
         setIsBackendOnline(false)
-      })
+      }
+    }
+
+    // Initial check
+    checkHealth()
+
+    // Check every 30 seconds
+    const interval = setInterval(checkHealth, 30000)
+
+    return () => clearInterval(interval)
   }, [])
 
   return (

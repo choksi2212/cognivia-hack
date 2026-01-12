@@ -78,6 +78,168 @@
       },
       "risk_score": 0.5,
       "state": "caution"
+    },
+    {
+      "timestamp": "2026-01-12T23:32:46.808917",
+      "location": {
+        "latitude": 22.68058827409683,
+        "longitude": 72.8677475407573
+      },
+      "risk_score": 0.5,
+      "state": "caution"
+    },
+    {
+      "timestamp": "2026-01-12T23:39:41.321868",
+      "location": {
+        "latitude": 22.682395215081556,
+        "longitude": 72.86920496555186
+      },
+      "risk_score": 0.5,
+      "state": "caution"
+    },
+    {
+      "timestamp": "2026-01-12T23:43:14.800273",
+      "location": {
+        "latitude": 22.681801271837617,
+        "longitude": 72.87063713461848
+      },
+      "risk_score": 0.5,
+      "state": "caution"
+    },
+    {
+      "timestamp": "2026-01-12T23:43:14.863048",
+      "location": {
+        "latitude": 22.68058827409683,
+        "longitude": 72.8677475407573
+      },
+      "risk_score": 0.5,
+      "state": "caution"
+    },
+    {
+      "timestamp": "2026-01-12T23:43:14.933266",
+      "location": {
+        "latitude": 22.680587562809972,
+        "longitude": 72.86775111255092
+      },
+      "risk_score": 0.5,
+      "state": "caution"
+    },
+    {
+      "timestamp": "2026-01-12T23:43:14.999677",
+      "location": {
+        "latitude": 22.682314,
+        "longitude": 72.870255
+      },
+      "risk_score": 0.5,
+      "state": "caution"
+    },
+    {
+      "timestamp": "2026-01-12T23:43:15.060670",
+      "location": {
+        "latitude": 22.68141766751205,
+        "longitude": 72.86825169263174
+      },
+      "risk_score": 0.5,
+      "state": "caution"
+    },
+    {
+      "timestamp": "2026-01-12T23:45:41.017155",
+      "location": {
+        "latitude": 22.680766458916743,
+        "longitude": 72.86883105443314
+      },
+      "risk_score": 0.5,
+      "state": "caution"
+    },
+    {
+      "timestamp": "2026-01-12T23:45:41.180924",
+      "location": {
+        "latitude": 22.682395215081556,
+        "longitude": 72.86920496555186
+      },
+      "risk_score": 0.5,
+      "state": "caution"
+    },
+    {
+      "timestamp": "2026-01-12T23:45:41.315639",
+      "location": {
+        "latitude": 22.682314,
+        "longitude": 72.870255
+      },
+      "risk_score": 0.5,
+      "state": "caution"
+    },
+    {
+      "timestamp": "2026-01-12T23:45:41.410577",
+      "location": {
+        "latitude": 22.682314,
+        "longitude": 72.870255
+      },
+      "risk_score": 0.5,
+      "state": "caution"
+    },
+    {
+      "timestamp": "2026-01-12T23:45:41.554398",
+      "location": {
+        "latitude": 22.682314,
+        "longitude": 72.870255
+      },
+      "risk_score": 0.5,
+      "state": "caution"
+    },
+    {
+      "timestamp": "2026-01-12T23:45:41.660274",
+      "location": {
+        "latitude": 22.682314,
+        "longitude": 72.870255
+      },
+      "risk_score": 0.5,
+      "state": "caution"
+    },
+    {
+      "timestamp": "2026-01-12T23:55:39.115352",
+      "location": {
+        "latitude": 22.682314,
+        "longitude": 72.870255
+      },
+      "risk_score": 0.5,
+      "state": "caution"
+    },
+    {
+      "timestamp": "2026-01-12T23:55:39.217058",
+      "location": {
+        "latitude": 22.682314,
+        "longitude": 72.870255
+      },
+      "risk_score": 0.5,
+      "state": "caution"
+    },
+    {
+      "timestamp": "2026-01-13T00:00:27.130942",
+      "location": {
+        "latitude": 22.682314,
+        "longitude": 72.870255
+      },
+      "risk_score": 0.5,
+      "state": "caution"
+    },
+    {
+      "timestamp": "2026-01-13T00:00:27.200494",
+      "location": {
+        "latitude": 22.682314,
+        "longitude": 72.870255
+      },
+      "risk_score": 0.5,
+      "state": "caution"
+    },
+    {
+      "timestamp": "2026-01-13T00:00:27.267403",
+      "location": {
+        "latitude": 22.682314,
+        "longitude": 72.870255
+      },
+      "risk_score": 0.5,
+      "state": "caution"
     }
   ]
 }
