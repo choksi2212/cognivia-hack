@@ -420,7 +420,7 @@ async def assess_risk(request: RiskAssessmentRequest):
             lng=request.location.longitude,
             risk_score=risk_score,
             risk_level=risk_level,
-            agent_state=agent.state,
+            agent_state=agent.context.current_state,
             features=features
         )
         
