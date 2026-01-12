@@ -19,6 +19,7 @@ import pandas as pd
 
 from agent import SafetyAgent, AgentDecision
 from config import MODEL_PATH, SCALER_PATH, FEATURE_NAMES_PATH, AGENT_STATE_PATH
+from osm_feature_extractor import extract_real_features
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -168,88 +169,137 @@ class AgentStateResponse(BaseModel):
 
 # Helper functions
 def extract_features_from_request(request: RiskAssessmentRequest) -> Dict:
-    """Extract features from request matching training feature names"""
+    """
+    Extract REAL features from request using actual OSM data
+    NO synthetic data - all features are real or explicitly provided by user
+    """
+    
+    # Validate coordinates
+    lat = request.location.latitude
+    lng = request.location.longitude
+    
+    if not (-90 <= lat <= 90):
+        raise ValueError(f"Invalid latitude: {lat}. Must be between -90 and 90")
+    if not (-180 <= lng <= 180):
+        raise ValueError(f"Invalid longitude: {lng}. Must be between -180 and 180")
     
     # Get timestamp
     if request.location.timestamp:
         try:
             dt = datetime.fromisoformat(request.location.timestamp)
-        except:
+        except Exception as e:
+            logger.warning(f"Invalid timestamp format: {e}. Using current time.")
             dt = datetime.now()
     else:
         dt = datetime.now()
     
-    # Base temporal features
+    # Extract REAL temporal features
+    hour = request.context.hour if request.context and request.context.hour is not None else dt.hour
+    day_of_week = request.context.day_of_week if request.context and request.context.day_of_week is not None else dt.weekday()
+    
+    # Validate temporal features
+    if not (0 <= hour < 24):
+        raise ValueError(f"Invalid hour: {hour}. Must be 0-23")
+    if not (0 <= day_of_week < 7):
+        raise ValueError(f"Invalid day_of_week: {day_of_week}. Must be 0-6")
+    
     features = {
-        'hour': request.context.hour if request.context and request.context.hour is not None else dt.hour,
-        'day_of_week': request.context.day_of_week if request.context and request.context.day_of_week is not None else dt.weekday(),
+        'hour': hour,
+        'day_of_week': day_of_week,
     }
     
-    # Time-based derived features
-    hour = features['hour']
+    # Temporal derived features
     features['is_night'] = int((hour >= 21) or (hour < 6))
     features['is_evening'] = int((hour >= 17) and (hour < 21))
     features['is_late_night'] = int((hour >= 0) and (hour < 6))
-    features['is_weekend'] = int(features['day_of_week'] in [5, 6])
+    features['is_weekend'] = int(day_of_week in [5, 6])
     
     # Time of day encoding
     if 6 <= hour < 12:
-        time_encoded = 0
+        time_encoded = 0  # morning
     elif 12 <= hour < 17:
-        time_encoded = 1
+        time_encoded = 1  # afternoon
     elif 17 <= hour < 21:
-        time_encoded = 2
+        time_encoded = 2  # evening
     elif 21 <= hour < 24:
-        time_encoded = 3
+        time_encoded = 3  # night
     else:
-        time_encoded = 4
+        time_encoded = 4  # late_night
     features['time_of_day_encoded'] = time_encoded
     
-    # Spatial features (use context if provided, else defaults)
-    if request.context:
-        features['poi_density'] = request.context.poi_density
-        features['police_station_distance'] = request.context.police_station_distance
-        features['hospital_distance'] = request.context.hospital_distance
-        features['intersection_count'] = request.context.intersection_count
-        features['dead_end_nearby'] = request.context.dead_end_nearby
-        features['lighting_score'] = request.context.lighting_score
-        features['crowd_density'] = request.context.crowd_density
-    else:
-        # Reasonable defaults
-        features['poi_density'] = 5.0
-        features['police_station_distance'] = 1000.0
-        features['hospital_distance'] = 1000.0
-        features['intersection_count'] = 3
-        features['dead_end_nearby'] = 0
-        features['lighting_score'] = 0.6
-        features['crowd_density'] = 10.0
-    
-    # Calculate isolation score
-    features['isolation_score'] = (
-        (1 / (features['poi_density'] + 1)) *
-        (1 / (features['intersection_count'] + 1)) *
-        (features['dead_end_nearby'] + 0.5)
-    )
-    
-    # Interaction features
-    features['night_isolation'] = features['is_night'] * features['isolation_score']
-    features['evening_alley'] = features['is_evening'] * 0  # Would need road_type
-    features['night_low_poi'] = features['is_night'] * int(features['poi_density'] < 3)
-    features['night_far_police'] = features['is_night'] * int(features['police_station_distance'] > 1000)
-    
-    # Road type encoding (if provided)
-    if request.context and request.context.road_type:
-        road_type = request.context.road_type
+    # Extract REAL spatial features from OpenStreetMap
+    try:
+        logger.info(f"Extracting REAL OSM features for ({lat}, {lng})")
+        osm_features = extract_real_features(lat, lng)
+        
+        # Use REAL OSM data
+        features['poi_density'] = osm_features['poi_density']
+        features['police_station_distance'] = osm_features['police_station_distance']
+        features['hospital_distance'] = osm_features['hospital_distance']
+        features['intersection_count'] = osm_features['intersection_count']
+        features['dead_end_nearby'] = osm_features['dead_end_nearby']
+        features['lighting_score'] = osm_features['lighting_score']
+        features['crowd_density'] = osm_features['crowd_density']
+        features['isolation_score'] = osm_features['isolation_score']
+        
+        # Road type encoding from REAL OSM data
+        road_type = osm_features['road_type']
         features['road_type_footpath'] = int(road_type == 'footpath')
         features['road_type_highway'] = int(road_type == 'highway')
         features['road_type_main_road'] = int(road_type == 'main_road')
         features['road_type_residential'] = int(road_type == 'residential')
-    else:
-        # Default to residential
-        features['road_type_footpath'] = 0
-        features['road_type_highway'] = 0
-        features['road_type_main_road'] = 0
-        features['road_type_residential'] = 1
+        
+        # Log data source for transparency
+        features['_data_source'] = osm_features['data_source']
+        features['_query_success'] = osm_features['query_success']
+        
+    except Exception as e:
+        logger.error(f"Failed to extract OSM features: {e}")
+        
+        # If user explicitly provided context, use that
+        if request.context:
+            logger.info("Using user-provided context features")
+            features['poi_density'] = request.context.poi_density
+            features['police_station_distance'] = request.context.police_station_distance
+            features['hospital_distance'] = request.context.hospital_distance
+            features['intersection_count'] = request.context.intersection_count
+            features['dead_end_nearby'] = request.context.dead_end_nearby
+            features['lighting_score'] = request.context.lighting_score
+            features['crowd_density'] = request.context.crowd_density
+            
+            # Calculate isolation from provided features
+            features['isolation_score'] = (
+                (1 / (features['poi_density'] + 1)) *
+                (1 / (features['intersection_count'] + 1)) *
+                (features['dead_end_nearby'] + 0.5)
+            )
+            
+            # Road type from context
+            road_type = request.context.road_type
+            features['road_type_footpath'] = int(road_type == 'footpath')
+            features['road_type_highway'] = int(road_type == 'highway')
+            features['road_type_main_road'] = int(road_type == 'main_road')
+            features['road_type_residential'] = int(road_type == 'residential')
+            
+            features['_data_source'] = 'user_provided'
+            features['_query_success'] = True
+        else:
+            # Last resort: fail gracefully with error
+            raise HTTPException(
+                status_code=503,
+                detail=f"Unable to extract features: {str(e)}. Please provide context features in request or try again later."
+            )
+    
+    # Interaction features (combining temporal + spatial)
+    features['night_isolation'] = features['is_night'] * features['isolation_score']
+    features['evening_alley'] = features['is_evening'] * features['road_type_footpath']  # Using footpath as proxy
+    features['night_low_poi'] = features['is_night'] * int(features['poi_density'] < 3)
+    features['night_far_police'] = features['is_night'] * int(features['police_station_distance'] > 1000)
+    
+    # Validate all features are numeric
+    for key, value in features.items():
+        if not key.startswith('_') and not isinstance(value, (int, float)):
+            raise ValueError(f"Feature '{key}' is not numeric: {value}")
     
     return features
 
