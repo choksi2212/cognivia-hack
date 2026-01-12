@@ -25,6 +25,9 @@ export default function Header({ isBackendOnline }: HeaderProps) {
             <Link href="/" className="text-gray-700 hover:text-primary-600 transition-colors">
               Home
             </Link>
+            <Link href="/hero" className="text-gray-700 hover:text-primary-600 transition-colors">
+              Experience
+            </Link>
             <Link href="/about" className="text-gray-700 hover:text-primary-600 transition-colors">
               About
             </Link>

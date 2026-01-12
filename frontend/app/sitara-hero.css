@@ -1,0 +1,236 @@
+/* SITARA Hero Section Styles */
+
+.sitara-hero-container {
+  position: relative;
+  width: 100%;
+  min-height: 300vh;
+  overflow: hidden;
+  background: linear-gradient(to bottom, #0a0a1a 0%, #1a1a2e 50%, #0f172a 100%);
+}
+
+.sitara-hero-canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+}
+
+.sitara-side-menu {
+  position: fixed;
+  left: 40px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 60px;
+}
+
+.sitara-menu-icon {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  cursor: pointer;
+  transition: transform 0.3s ease;
+}
+
+.sitara-menu-icon:hover {
+  transform: scale(1.1);
+}
+
+.sitara-menu-icon span {
+  width: 30px;
+  height: 2px;
+  background: linear-gradient(90deg, #60a5fa, #a78bfa);
+  border-radius: 2px;
+  transition: all 0.3s ease;
+}
+
+.sitara-menu-icon:hover span {
+  background: linear-gradient(90deg, #3b82f6, #9333ea);
+}
+
+.sitara-vertical-text {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 6px;
+  background: linear-gradient(180deg, #60a5fa, #a78bfa);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.sitara-hero-content {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 10;
+  text-align: center;
+  width: 90%;
+  max-width: 1200px;
+  pointer-events: none;
+}
+
+.sitara-hero-title {
+  font-size: clamp(4rem, 15vw, 12rem);
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  margin: 0;
+  background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 50%, #ec4899 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-transform: uppercase;
+  line-height: 1;
+  filter: drop-shadow(0 0 30px rgba(96, 165, 250, 0.3));
+  animation: sitara-title-glow 3s ease-in-out infinite;
+}
+
+@keyframes sitara-title-glow {
+  0%, 100% {
+    filter: drop-shadow(0 0 30px rgba(96, 165, 250, 0.3));
+  }
+  50% {
+    filter: drop-shadow(0 0 50px rgba(167, 139, 250, 0.5));
+  }
+}
+
+.sitara-hero-subtitle {
+  margin-top: 2rem;
+  font-size: clamp(1rem, 2vw, 1.5rem);
+  font-weight: 300;
+  color: rgba(255, 255, 255, 0.8);
+  letter-spacing: 0.05em;
+  line-height: 1.8;
+}
+
+.subtitle-line {
+  margin: 0.5rem 0;
+  opacity: 0.9;
+}
+
+.sitara-scroll-progress {
+  position: fixed;
+  bottom: 60px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.sitara-scroll-text {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 4px;
+  color: rgba(255, 255, 255, 0.6);
+  animation: sitara-scroll-bounce 2s ease-in-out infinite;
+}
+
+@keyframes sitara-scroll-bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.sitara-progress-track {
+  width: 150px;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.sitara-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #3b82f6, #9333ea);
+  border-radius: 2px;
+  transition: width 0.1s ease-out;
+  box-shadow: 0 0 20px rgba(147, 51, 234, 0.5);
+}
+
+.sitara-section-counter {
+  font-size: 14px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.5);
+  font-variant-numeric: tabular-nums;
+}
+
+.sitara-scroll-sections {
+  position: relative;
+  z-index: 5;
+}
+
+.sitara-content-section {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+  text-align: center;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .sitara-side-menu {
+    left: 20px;
+    gap: 40px;
+  }
+
+  .sitara-menu-icon span {
+    width: 24px;
+  }
+
+  .sitara-vertical-text {
+    font-size: 12px;
+    letter-spacing: 4px;
+  }
+
+  .sitara-hero-title {
+    font-size: clamp(3rem, 12vw, 6rem);
+  }
+
+  .sitara-hero-subtitle {
+    font-size: clamp(0.9rem, 3vw, 1.2rem);
+    padding: 0 1rem;
+  }
+
+  .sitara-scroll-progress {
+    bottom: 40px;
+  }
+
+  .sitara-progress-track {
+    width: 100px;
+  }
+
+  .sitara-scroll-text {
+    font-size: 10px;
+    letter-spacing: 3px;
+  }
+}
+
+/* Performance optimization */
+.sitara-hero-canvas,
+.sitara-hero-content,
+.sitara-side-menu,
+.sitara-scroll-progress {
+  will-change: transform;
+}
+
+/* Smooth transitions */
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
